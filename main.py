@@ -90,7 +90,8 @@ class Joc:
 
     # pygame.display.update()
 
-    def __init__(self, piese_albe = None, piese_negre = None, nod_piesa_selectata = None):
+    def __init__(self, piese_albe = None, piese_negre = None, capturat = False, nod_piesa_selectata = None):
+        self.capturat = capturat
         self.coordonate_noduri = [[self.translatie + self.scalare * x for x in nod] for nod in self.noduri]
 
         self.piese_albe = piese_albe or [
@@ -114,7 +115,7 @@ class Joc:
     def jucator_opus(cls, jucator):
         return cls.JMAX if jucator == cls.JMIN else cls.JMIN
 
-    def pot_muta(self, piesa):
+    def pot_muta(self, piesa, jucator):
         index = self.coordonate_noduri.index(piesa)
         for i in [index - 6, index - 5, index - 4, index - 1, index + 1, index + 4, index + 5, index + 6]:
             if 0 <= i < 25:
@@ -122,6 +123,18 @@ class Joc:
                 if (index, i) in self.muchii or (i, index) in self.muchii:
                     if loc not in self.piese_albe + self.piese_negre:
                         return True
+
+        piese_curente = self.piese_albe
+        piese_adverse = self.piese_negre
+        if jucator == 'negre':
+            piese_curente, piese_adverse = piese_adverse, piese_curente
+        for i in [-12, -10, -8, -2, 2, 4, 10, 12]:
+            mij = int(index + i / 2)
+            varf = index + i
+            if 0 <= mij < 25 and 0 <= varf < 25 and self.e_muchie(index, mij) and self.e_muchie(mij, varf):
+                if self.coordonate_noduri[mij] in piese_adverse and self.coordonate_noduri[
+                    varf] not in piese_adverse + piese_curente:
+                    return True
         return False
 
     def final(self):
@@ -131,14 +144,14 @@ class Joc:
             return "albe"
         ok = False
         for piesa in self.piese_albe:
-            if self.pot_muta(piesa):
+            if self.pot_muta(piesa, "albe"):
                 ok = True
                 break
         if not ok:
             return "negre"
         ok = False
         for piesa in self.piese_negre:
-            if self.pot_muta(piesa):
+            if self.pot_muta(piesa, "negre"):
                 ok = True
                 break
         if not ok:
@@ -167,9 +180,9 @@ class Joc:
                         piese_adverse_noi = list(piese_adverse)
                         piese_adverse_noi.remove(self.coordonate_noduri[mij])
                         if self.JMAX == 'negre':
-                            l_mutari.append(Joc(piese_adverse_noi, piese_curente_noi))
+                            l_mutari.append(Joc(piese_adverse_noi, piese_curente_noi, True))
                         else:
-                            l_mutari.append(Joc(piese_curente_noi, piese_adverse_noi))
+                            l_mutari.append(Joc(piese_curente_noi, piese_adverse_noi, True))
             for i in [index - 6, index - 5, index - 4, index - 1, index + 1, index + 4, index + 5, index + 6]:
                 if 0 <= i < 25:
                     loc = self.coordonate_noduri[i]
@@ -315,19 +328,15 @@ def alpha_beta(alpha, beta, stare):
     if stare.adancime == 0 or stare.tabla_joc.final():
         stare.estimare = stare.tabla_joc.estimeaza_scor(stare.adancime)
         return stare
-
     if alpha > beta:
         return stare  # este intr-un interval invalid deci nu o mai procesez
-
     stare.mutari_posibile = stare.mutari()
 
     if stare.j_curent == Joc.JMAX:
         estimare_curenta = float('-inf')
-
         for mutare in stare.mutari_posibile:
             # calculeaza estimarea pentru starea noua, realizand subarborele
             stare_noua = alpha_beta(alpha, beta, mutare)
-
             if (estimare_curenta < stare_noua.estimare):
                 stare.stare_aleasa = stare_noua
                 estimare_curenta = stare_noua.estimare
@@ -335,18 +344,13 @@ def alpha_beta(alpha, beta, stare):
                 alpha = stare_noua.estimare
                 if alpha >= beta:
                     break
-
     elif stare.j_curent == Joc.JMIN:
         estimare_curenta = float('inf')
-
         for mutare in stare.mutari_posibile:
-
             stare_noua = alpha_beta(alpha, beta, mutare)
-
             if (estimare_curenta > stare_noua.estimare):
                 stare.stare_aleasa = stare_noua
                 estimare_curenta = stare_noua.estimare
-
             if (beta > stare_noua.estimare):
                 beta = stare_noua.estimare
                 if alpha >= beta:
@@ -362,10 +366,8 @@ def afis_daca_final(stare_curenta):
         if (final == "remiza"):
             print("Remiza!")
         else:
-            print("A castigat " + final)
-
+            print("A castigat jucatorul cu piesele " + final)
         return True
-
     return False
 
 
@@ -400,7 +402,7 @@ def main():
     # initializare algoritm
     raspuns_valid = False
     while not raspuns_valid:
-        tip_algoritm = input("Algorimul folosit? (raspundeti cu 1 sau 2)\n 1.Minimax\n 2.Alpha-beta\n ")
+        tip_algoritm = input("Algoritmul folosit? (raspundeti cu 1 sau 2)\n 1.Minimax\n 2.Alpha-beta\n ")
         if tip_algoritm in ['1', '2']:
             raspuns_valid = True
         else:
@@ -421,7 +423,8 @@ def main():
     print(str(tabla_curenta))
 
     # creare stare initiala
-    stare_curenta = Stare(tabla_curenta, 'albe', ADANCIME_MAX)
+    # jucatorul incepe mereu primul
+    stare_curenta = Stare(tabla_curenta, Joc.JMIN, ADANCIME_MAX)
 
     # setari interf grafica
     pygame.init()
@@ -466,7 +469,7 @@ def main():
                                         piese_curente.remove(stare_curenta.tabla_joc.nod_piesa_selectata)
                                         piese_curente.append(nod)
                                         stare_curenta.tabla_joc.nod_piesa_selectata = False
-                                        stare_curenta.j_curent = Joc.jucator_opus(stare_curenta.j_curent)
+                                        afis_daca_final(stare_curenta)
                                     elif ((n0, n1) in Joc.muchii or (n1, n0) in Joc.muchii):
                                         piese_curente.remove(stare_curenta.tabla_joc.nod_piesa_selectata)
                                         piese_curente.append(nod)
@@ -504,7 +507,11 @@ def main():
                 break
 
             # S-a realizat o mutare. Schimb jucatorul cu cel opus
-            stare_curenta.j_curent = Joc.jucator_opus(stare_curenta.j_curent)
+            if not stare_curenta.tabla_joc.capturat:
+                stare_curenta.j_curent = Joc.jucator_opus(stare_curenta.j_curent)
+            else:
+                afis_daca_final(stare_curenta)
+                time.sleep(0.5)
 
 
 if __name__ == "__main__":
