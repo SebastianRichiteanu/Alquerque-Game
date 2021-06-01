@@ -43,7 +43,6 @@ class Joc:
     raza_pct = 10
     raza_piesa = 20
 
-
     @classmethod
     def initializeaza(cls, display):
         cls.display = display
@@ -105,7 +104,6 @@ class Joc:
         ]
         else:
             self.piese_negre = piese_negre
-
 
     @classmethod
     def jucator_opus(cls, jucator):
@@ -208,11 +206,11 @@ class Joc:
                                 l_mutari.append(Joc(piese_curente_noi, piese_adverse))
         return l_mutari
 
-
     # linie deschisa inseamna linie pe care jucatorul mai poate forma o configuratie castigatoare
     # practic e o linie fara simboluri ale jucatorului opus
 
     def linie_deschisa(self, piesa, jucator):
+        # functie care intoarce numarul de capturari pe care le pot face cu o piesa
         scor = 0
         index = self.coordonate_noduri.index(piesa)
         piese_curente = self.piese_negre
@@ -227,49 +225,44 @@ class Joc:
                     scor += 1
         return scor
 
-
-    def capturari(self, jucator):
+    def capturari(self, jucator, mod):
         scor = 0
-        if jucator == 'negre':
-            for piesa in self.piese_negre:
-                scor += self.linie_deschisa(piesa, jucator)
+        if mod == '1':
+            # cate piese pot captura in starea curenta
+            # pentru fiecare piesa adaug maxim 1
+            # acest scor este prielnic lui MAX deoarece cu cat captureaza mai multe piese cu atat sansele adversarului de castig scad
+            if jucator == 'negre':
+                for piesa in self.piese_negre:
+                    if self.linie_deschisa(piesa, jucator):
+                        scor += 1
+            else:
+                for piesa in self.piese_albe:
+                    if self.linie_deschisa(piesa, jucator):
+                        scor += 1
         else:
-            for piesa in self.piese_albe:
-                scor += self.linie_deschisa(piesa, jucator)
+            # cate piese pot captura in starea curenta
+            # pentru fiecare piesa calculez maximul de capturari
+            # acest scor este prielnic lui MAX deoarece cu cat captureaza mai multe piese cu atat sansele adversarului de castig scad
+            if jucator == 'negre':
+                for piesa in self.piese_negre:
+                    nr_capt = self.linie_deschisa(piesa, jucator)
+                    if nr_capt > scor:
+                        scor = nr_capt
+            else:
+                for piesa in self.piese_albe:
+                    nr_capt = self.linie_deschisa(piesa, jucator)
+                    if nr_capt > scor:
+                        scor = nr_capt
         return scor
 
-    def capturari2(self, jucator):
-        scor = 0
-        if jucator == 'negre':
-            for piesa in self.piese_negre:
-                scor_curent = self.linie_deschisa(piesa, jucator)
-                if scor_curent > scor:
-                    scor = scor_curent
-        else:
-            for piesa in self.piese_albe:
-                scor_curent = self.linie_deschisa(piesa, jucator)
-                if scor_curent > scor:
-                    scor = scor_curent
-        return scor
-
-    def estimeaza_scor(self, adancime):
-        t_final = self.final()
-        if t_final == self.__class__.JMAX:
+    def estimeaza_scor(self, adancime, mod='1'):
+        t_final = self.final() # verific daca e final
+        if t_final == self.__class__.JMAX: # daca castiga PC
             return (99 + adancime)
-        elif t_final == self.__class__.JMIN:
+        elif t_final == self.__class__.JMIN: # daca castiga jucatorul
             return (-99 - adancime)
-        else:
-            return (self.capturari(self.__class__.JMAX) - self.capturari(self.__class__.JMIN))
-
-    def estimeaza_scor2(self, adancime):
-        t_final = self.final()
-        if t_final == self.__class__.JMAX:
-            return (99 + adancime)
-        elif t_final == self.__class__.JMIN:
-            return (-99 - adancime)
-        else:
-            return (self.capturari2(self.__class__.JMAX) - self.capturari2(self.__class__.JMIN))
-
+        else: # altfel scor pc - scor jucator
+            return self.capturari(self.__class__.JMAX, mod) - self.capturari(self.__class__.JMIN, mod)
 
     def __str__(self):
         sir = ""
@@ -328,10 +321,10 @@ class Stare:
 """ Algoritmul MinMax """
 
 
-def min_max(stare):
+def min_max(stare, mod_estimare):
     global n_min, n_max, n_l, mutari_gen  # noduri
     if stare.adancime == 0 or stare.tabla_joc.final():
-        stare.estimare = stare.tabla_joc.estimeaza_scor(stare.adancime) # 1 sau 2
+        stare.estimare = stare.tabla_joc.estimeaza_scor(stare.adancime, mod_estimare)
         return stare
 
     # calculez toate mutarile posibile din starea curenta
@@ -340,7 +333,7 @@ def min_max(stare):
 
 
     # aplic algoritmul minimax pe toate mutarile posibile (calculand astfel subarborii lor)
-    mutariCuEstimare = [min_max(mutare) for mutare in stare.mutari_posibile]
+    mutariCuEstimare = [min_max(mutare, mod_estimare) for mutare in stare.mutari_posibile]
 
     if stare.j_curent == Joc.JMAX:
         # daca jucatorul e JMAX aleg starea-fiica cu estimarea maxima
@@ -352,22 +345,21 @@ def min_max(stare):
     return stare
 
 
-def alpha_beta(alpha, beta, stare):
+def alpha_beta(alpha, beta, stare, mod_estimare):
     global n_min, n_max, n_l, mutari_gen  # noduri
     if stare.adancime == 0 or stare.tabla_joc.final():
-        stare.estimare = stare.tabla_joc.estimeaza_scor(stare.adancime)
+        stare.estimare = stare.tabla_joc.estimeaza_scor(stare.adancime, mod_estimare)
         return stare
     if alpha > beta:
         return stare  # este intr-un interval invalid deci nu o mai procesez
     stare.mutari_posibile = stare.mutari()
     mutari_gen += len(stare.mutari_posibile)
 
-
     if stare.j_curent == Joc.JMAX:
         estimare_curenta = float('-inf')
         for mutare in stare.mutari_posibile:
             # calculeaza estimarea pentru starea noua, realizand subarborele
-            stare_noua = alpha_beta(alpha, beta, mutare)
+            stare_noua = alpha_beta(alpha, beta, mutare, mod_estimare)
             if (estimare_curenta < stare_noua.estimare):
                 stare.stare_aleasa = stare_noua
                 estimare_curenta = stare_noua.estimare
@@ -378,7 +370,7 @@ def alpha_beta(alpha, beta, stare):
     elif stare.j_curent == Joc.JMIN:
         estimare_curenta = float('inf')
         for mutare in stare.mutari_posibile:
-            stare_noua = alpha_beta(alpha, beta, mutare)
+            stare_noua = alpha_beta(alpha, beta, mutare, mod_estimare)
             if (estimare_curenta > stare_noua.estimare):
                 stare.stare_aleasa = stare_noua
                 estimare_curenta = stare_noua.estimare
@@ -388,6 +380,7 @@ def alpha_beta(alpha, beta, stare):
                     break
     stare.estimare = stare.stare_aleasa.estimare
     return stare
+
 
 def afis():
     global t_l, n_l, timp_total, mutari_juc, mutari_pc
@@ -410,12 +403,14 @@ def afis():
 
 
 def afis_daca_final(stare_curenta):
-    if stare_curenta == "force quit":
+    global game_over
+    if stare_curenta == "force quit" and not game_over:
         print("\nJocul a fost intrerupt!\n")
         return afis()
     else:
         final = stare_curenta.tabla_joc.final()
         if (final):
+            game_over = True
             print("\nA castigat jucatorul cu piesele " + final + "!!\n")
             return afis()
 
@@ -448,6 +443,7 @@ def capturare(n0, n1, piese_adverse): # functie pentru a vedea daca jucatorul a 
         return n2
     return False
 
+
 def puteam_captura(stare_curenta, JMIN):
     piese_curente, piese_adverse = stare_curenta.tabla_joc.piese_albe, stare_curenta.tabla_joc.piese_negre
     if JMIN == "negre":
@@ -465,8 +461,6 @@ def puteam_captura(stare_curenta, JMIN):
                     l.append(piesa)
                     break
     return l
-
-
 
 
 class Buton:
@@ -540,6 +534,13 @@ class GrupButoane:
             b.deseneaza()
 
     def getValoare(self):
+        ok = False
+        for btn in self.listaButoane:
+            if btn.selectat:
+                ok = True
+                break
+        if not ok:
+            return ok
         return self.listaButoane[self.indiceSelectat].valoare
 
 
@@ -579,12 +580,22 @@ def deseneaza_alegeri(display, tabla_curenta):
         ],
         indiceSelectat= 2
     )
+    btn_estimari = GrupButoane(
+        top=310,
+        left=30,
+        listaButoane=[
+            Buton(display=display, w=80, h=30, text="Estimare 1", valoare="1"),
+            Buton(display=display, w=80, h=30, text="Estimare 2", valoare="2")
+        ],
+        indiceSelectat=1
+    )
 
-    ok = Buton(display=display, top=310, left=30, w=40, h=30, text="ok", culoareFundal=(155, 0, 55))
+    ok = Buton(display=display, top=380, left=30, w=40, h=30, text="ok", culoareFundal=(155, 0, 55))
     btn_alg.deseneaza()
     btn_juc.deseneaza()
     btn_dif.deseneaza()
     btn_incep.deseneaza()
+    btn_estimari.deseneaza()
     ok.deseneaza()
     while True:
         for ev in pygame.event.get():
@@ -598,23 +609,28 @@ def deseneaza_alegeri(display, tabla_curenta):
                     if not btn_juc.selecteazaDupacoord(pos):
                         if not btn_incep.selecteazaDupacoord(pos):
                             if not btn_dif.selecteazaDupacoord(pos):
-                                if ok.selecteazaDupacoord(pos):
-                                    display.fill((0, 0, 0))  # stergere ecran
-                                    tabla_curenta.deseneaza_grid()
-                                    return btn_juc.getValoare(), btn_alg.getValoare(), btn_incep.getValoare(), btn_dif.getValoare()
+                                if not btn_estimari.selecteazaDupacoord(pos):
+                                    if ok.selecteazaDupacoord(pos):
+                                        if btn_juc.getValoare() and btn_alg.getValoare() and btn_incep.getValoare() and btn_dif.getValoare() and btn_estimari.getValoare():
+                                            display.fill((0, 0, 0))  # stergere ecran
+                                            tabla_curenta.deseneaza_grid()
+                                            return btn_juc.getValoare(), btn_alg.getValoare(), btn_incep.getValoare(), btn_dif.getValoare(), btn_estimari.getValoare()
+                                        else:
+                                            print("Trebuie selectata cel putin o valoare de pe fiecare rand!")
         pygame.display.update()
 
 
 def main():
     # initializari variabile globale pentru timp, mutari si noduri
 
-    global t_juc_inainte, t_l, n_l, timp_total, mutari_pc, mutari_juc, mutari_gen
+    global t_juc_inainte, t_l, n_l, timp_total, mutari_pc, mutari_juc, mutari_gen, game_over
     t_juc_inainte = int(round(time.time() * 1000)) # timpul de start pentru muatrile jucatorului
     t_l = [] # lista cu timpi
     n_l = [] # lista cu numere de noduri
     timp_total = int(round(time.time())) # timpul la care a pornit programul
     mutari_pc = mutari_juc = mutari_gen = 0 # variabile pentru numarul de mutari
     l_puteam_captura = []
+    game_over = False # variabila pentru a nu afisa de 2 ori
 
     # initializare tabla
     tabla_curenta = Joc();
@@ -628,8 +644,10 @@ def main():
     ecran = pygame.display.set_mode(size=(502, 502))  # N *100+ N-1
     Joc.initializeaza(ecran)
 
-    Joc.JMIN, tip_algoritm, incep, ADANCIME_MAX = deseneaza_alegeri(ecran, tabla_curenta)
+    Joc.JMIN, tip_algoritm, incep, ADANCIME_MAX, mod_estimare = deseneaza_alegeri(ecran, tabla_curenta)
     ADANCIME_MAX = int(ADANCIME_MAX)
+    if tip_algoritm == 'alphabeta':
+        ADANCIME_MAX += 1
     Joc.JMAX = 'albe' if Joc.JMIN == 'negre' else 'negre'
 
     # initializare stare
@@ -708,9 +726,9 @@ def main():
             # preiau timpul in milisecunde de dinainte de mutare
             t_inainte = int(round(time.time() * 1000))
             if tip_algoritm == 'minimax':
-                stare_actualizata = min_max(stare_curenta)
+                stare_actualizata = min_max(stare_curenta, mod_estimare)
             else:
-                stare_actualizata = alpha_beta(-500, 500, stare_curenta)
+                stare_actualizata = alpha_beta(-500, 500, stare_curenta, mod_estimare)
             stare_curenta.tabla_joc = stare_actualizata.stare_aleasa.tabla_joc
             print("Tabla dupa mutarea calculatorului")
             print(str(stare_curenta))
@@ -739,7 +757,6 @@ def main():
                 time.sleep(1) # muta prea repede
             mutari_pc += 1
             t_juc_inainte = int(round(time.time() * 1000))
-
 
 
 if __name__ == "__main__":
