@@ -38,10 +38,10 @@ class Joc:
                   (2, 8), (8, 12), (12, 18), (18, 22),
                   (4, 8), (8, 14), (14, 18), (18, 24)
     ]
-    scalare = 100
-    translatie = 20
-    raza_pct = 10
-    raza_piesa = 20
+    scalare = 120
+    translatie = 60
+    raza_pct = 20
+    raza_piesa = 50
 
     @classmethod
     def initializeaza(cls, display):
@@ -54,8 +54,8 @@ class Joc:
         cls.piesa_rosie = pygame.image.load('resources/piesa-rosie.png')
         cls.piesa_rosie = pygame.transform.scale(cls.piesa_rosie, (cls.diametru_piesa, cls.diametru_piesa))
 
-        cls.culoare_ecran = (255, 255, 255)
-        cls.culoare_linii = (0, 0, 0)
+        cls.culoare_ecran = (190, 190, 190)
+        cls.culoare_linii = (70, 70, 70)
         cls.coordonate_noduri = [[cls.translatie + cls.scalare * x for x in nod] for nod in cls.noduri]
 
     def deseneaza_grid(self, marcaj=None):  # tabla de exemplu este ["#","x","#","0",......]
@@ -314,7 +314,7 @@ class Stare:
         return l_stari_mutari
 
     def __str__(self):
-        sir = str(self.tabla_joc) + "(Juc curent:" + self.j_curent + ")\n"
+        sir = str(self.tabla_joc)
         return sir
 
 
@@ -404,9 +404,10 @@ def afis():
 
 def afis_daca_final(stare_curenta):
     global game_over
-    if stare_curenta == "force quit" and not game_over:
-        print("\nJocul a fost intrerupt!\n")
-        return afis()
+    if stare_curenta == "force quit":
+        print("\nProgramul a fost intrerupt!\n")
+        if not game_over:
+            return afis()
     else:
         final = stare_curenta.tabla_joc.final()
         if (final):
@@ -422,13 +423,13 @@ def coliniare (n0, n1): # calcularea "mijlocului"
     y = n0[1]
     x1 = n1[0]
     y1 = n1[1]
-    if x == x1 and abs(y-y1) == 200:
+    if x == x1 and abs(y-y1) == 240:
         y2 = abs(y+y1)/2
         return [x, y2]
-    if y == y1 and abs(x-x1) == 200:
+    if y == y1 and abs(x-x1) == 240:
         x2 = abs(x+x1)/2
         return [x2, y]
-    if abs(x-x1) == 200 and abs(y-y1) == 200:
+    if abs(x-x1) == 240 and abs(y-y1) == 240:
         x2 = abs(x+x1)/2
         y2 = abs(y+y1)/2
         return [x2, y2]
@@ -465,7 +466,7 @@ def puteam_captura(stare_curenta, JMIN):
 
 class Buton:
     def __init__(self, display=None, left=0, top=0, w=0, h=0, culoareFundal=(53, 80, 115),
-                 culoareFundalSel=(89, 134, 194), text="", font="arial", fontDimensiune=16, culoareText=(255, 255, 255),
+                 culoareFundalSel=(89, 134, 194), text="", font="arial", fontDimensiune=25, culoareText=(255, 255, 255),
                  valoare=""):
         self.display = display
         self.culoareFundal = culoareFundal
@@ -547,50 +548,55 @@ class GrupButoane:
 ############# ecran initial ########################
 def deseneaza_alegeri(display, tabla_curenta):
     btn_alg = GrupButoane(
-        top=30,
-        left=30,
+        top=20,
+        left=50,
         listaButoane=[
-            Buton(display=display, w=80, h=30, text="minimax", valoare="minimax"),
-            Buton(display=display, w=80, h=30, text="alphabeta", valoare="alphabeta")
+            Buton(display=display, w=110, h=50, text="minimax", valoare="minimax"),
+            Buton(display=display, w=110, h=50, text="alphabeta", valoare="alphabeta")
         ],
+        spatiuButoane=30,
         indiceSelectat=1)
     btn_juc = GrupButoane(
-        top=100,
-        left=30,
+        top=120,
+        left=50,
         listaButoane=[
-            Buton(display=display, w=35, h=30, text="albe", valoare="albe"),
-            Buton(display=display, w=35, h=30, text="negre", valoare="negre")
+            Buton(display=display, w=110, h=50, text="albe", valoare="albe"),
+            Buton(display=display, w=110, h=50, text="negre", valoare="negre")
         ],
+        spatiuButoane=30,
         indiceSelectat=0)
     btn_incep = GrupButoane(
-        top=170,
-        left=30,
+        top=220,
+        left=50,
         listaButoane=[
-            Buton(display=display, w=70, h=30, text="Incep EU", valoare="eu"),
-            Buton(display=display, w=70, h=30, text="Incepe PC", valoare="pc")
+            Buton(display=display, w=110, h=50, text="Incep EU", valoare="eu"),
+            Buton(display=display, w=110, h=50, text="Incepe PC", valoare="pc")
         ],
+        spatiuButoane=30,
         indiceSelectat=0)
     btn_dif = GrupButoane(
-        top = 240,
-        left = 30,
+        top = 320,
+        left = 50,
         listaButoane=[
-            Buton(display=display, w=60, h=30, text="incepator", valoare="2"),
-            Buton(display=display, w=60, h=30, text="mediu", valoare="3"),
-            Buton(display=display, w=60, h=30, text="avansat", valoare="4")
+            Buton(display=display, w=110, h=50, text="Incepator", valoare="2"),
+            Buton(display=display, w=110, h=50, text="Mediu", valoare="3"),
+            Buton(display=display, w=110, h=50, text="Avansat", valoare="4")
         ],
+        spatiuButoane=30,
         indiceSelectat= 2
     )
     btn_estimari = GrupButoane(
-        top=310,
-        left=30,
+        top=420,
+        left=50,
         listaButoane=[
-            Buton(display=display, w=80, h=30, text="Estimare 1", valoare="1"),
-            Buton(display=display, w=80, h=30, text="Estimare 2", valoare="2")
+            Buton(display=display, w=110, h=50, text="Estimare 1", valoare="1"),
+            Buton(display=display, w=110, h=50, text="Estimare 2", valoare="2")
         ],
+        spatiuButoane=30,
         indiceSelectat=1
     )
 
-    ok = Buton(display=display, top=380, left=30, w=40, h=30, text="ok", culoareFundal=(155, 0, 55))
+    ok = Buton(display=display, top=520, left=50, w=110, h=50, text="ok", culoareFundal=(155, 0, 55))
     btn_alg.deseneaza()
     btn_juc.deseneaza()
     btn_dif.deseneaza()
@@ -641,20 +647,22 @@ def main():
     pygame.init()
     pygame.display.set_caption('Richiteanu Mihai-Sebastian - Alquerque')
     # dimensiunea ferestrei in pixeli
-    ecran = pygame.display.set_mode(size=(502, 502))  # N *100+ N-1
+    ecran = pygame.display.set_mode(size=(599, 599))  # N *100+ N-1
     Joc.initializeaza(ecran)
 
     Joc.JMIN, tip_algoritm, incep, ADANCIME_MAX, mod_estimare = deseneaza_alegeri(ecran, tabla_curenta)
     ADANCIME_MAX = int(ADANCIME_MAX)
     if tip_algoritm == 'alphabeta':
-        ADANCIME_MAX += 1
+        ADANCIME_MAX += 1 # daca se foloseste algoritmul alphabeta cresc adancimea cu 1
     Joc.JMAX = 'albe' if Joc.JMIN == 'negre' else 'negre'
 
     # initializare stare
     if incep == "eu":
         stare_curenta = Stare(tabla_curenta, Joc.JMIN, ADANCIME_MAX)
+        print("\nEste randul jucatorului!\n")
     else:
         stare_curenta = Stare(tabla_curenta, Joc.JMAX, ADANCIME_MAX)
+        print("\nEste randul calculatorului!\n")
 
     tabla_curenta.deseneaza_grid()
 
@@ -711,6 +719,7 @@ def main():
                                         mutari_juc += 1
                                         print("Jucatorul a \"gandit\" timp de " + str(
                                             t_juc_dupa - t_juc_inainte) + " milisecunde.")
+                                        print("\nEste randul calculatorului!\n")
                             else:
                                 if nod in piese_curente: # daca a dat click pe o piesa curenta
                                     if stare_curenta.tabla_joc.nod_piesa_selectata: # daca era deja selectata
@@ -752,11 +761,13 @@ def main():
             # daca nu s-a realizat o capturare, schimb jucatorul cu cel opus
             if not stare_curenta.tabla_joc.capturat:
                 stare_curenta.j_curent = Joc.jucator_opus(stare_curenta.j_curent)
+                print("\nEste randul jucatorului!\n")
             else:
                 afis_daca_final(stare_curenta)
                 time.sleep(1) # muta prea repede
             mutari_pc += 1
             t_juc_inainte = int(round(time.time() * 1000))
+
 
 
 if __name__ == "__main__":
