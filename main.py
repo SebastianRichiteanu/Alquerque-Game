@@ -357,6 +357,8 @@ def alpha_beta(alpha, beta, stare, mod_estimare):
 
     if stare.j_curent == Joc.JMAX:
         estimare_curenta = float('-inf')
+        stare.mutari_posibile = sorted(stare.mutari_posibile, key=lambda x: x.tabla_joc.estimeaza_scor(stare.adancime), reverse=True)
+        # pentru sortarea dupa scorul estimat
         for mutare in stare.mutari_posibile:
             # calculeaza estimarea pentru starea noua, realizand subarborele
             stare_noua = alpha_beta(alpha, beta, mutare, mod_estimare)
@@ -369,6 +371,8 @@ def alpha_beta(alpha, beta, stare, mod_estimare):
                     break
     elif stare.j_curent == Joc.JMIN:
         estimare_curenta = float('inf')
+        stare.mutari_posibile = sorted(stare.mutari_posibile,key=lambda x : x.tabla_joc.estimeaza_scor(stare.adancime))
+        # pentru sortarea dupa scorul estimat
         for mutare in stare.mutari_posibile:
             stare_noua = alpha_beta(alpha, beta, mutare, mod_estimare)
             if (estimare_curenta > stare_noua.estimare):
@@ -413,6 +417,15 @@ def afis_daca_final(stare_curenta):
         if (final):
             game_over = True
             print("\nA castigat jucatorul cu piesele " + final + "!!\n")
+            # colorare simboluri castigatoare
+            if final == 'albe':
+                for piesa in stare_curenta.tabla_joc.piese_albe:
+                    Joc.display.blit(Joc.piesa_rosie, (piesa[0] - Joc.raza_piesa, piesa[1] - Joc.raza_piesa))
+                pygame.display.update()
+            elif final == 'negre':
+                for piesa in stare_curenta.tabla_joc.piese_negre:
+                    Joc.display.blit(Joc.piesa_rosie, (piesa[0] - Joc.raza_piesa, piesa[1] - Joc.raza_piesa))
+                pygame.display.update()
             return afis()
 
     return False
